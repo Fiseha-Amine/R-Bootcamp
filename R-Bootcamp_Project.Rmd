@@ -1,5 +1,5 @@
 ---
-title: "R-Bootcamp_Project"
+title: "Analysis of Rental Housing Market"
 author: "Fiseha Amine,Martina Schüpbach-Wolf  "
 date: "2 2 2021"
 output: html_document
@@ -13,18 +13,28 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-data <- read.csv2("mietinserate_v1.csv", header = TRUE)
-data
+data <- read.csv2("mietinserate_v1.csv", header = TRUE, fileEncoding = "UTF-8")
+head(data)
+
 ```
 ```{r}
 plot(y = data$Mietpreis_Brutto,
-     x = data$Zimmer,
+     x = data$Fläche,
      pch = "x", "preis pro Wohnung")
 ```
 
 
 ```{r}
-tinytex::install_tinytex()
+#library(dplyr)
+#%>%
+#  top_n(n = 10, wt = Mietpreis_Brutto)
 
+```
+
+
+```{r}
+plot(y = data$Mietpreis_Brutto,
+     x = data$Wohnungstyp,
+     pch = "x", "preis pro Wohnung")
 ```
 
