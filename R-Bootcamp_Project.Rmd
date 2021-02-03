@@ -26,5 +26,6 @@ plot(y = data$Mietpreis_Brutto,
 ```{r}
 tinytex::install_tinytex()
 
+#show
 ```
 
