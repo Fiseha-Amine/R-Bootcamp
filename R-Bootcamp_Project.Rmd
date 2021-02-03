@@ -1,0 +1,30 @@
+---
+title: "R-Bootcamp_Project"
+author: "Fiseha Amine,Martina Schüpbach-Wolf  "
+date: "2 2 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+data <- read.csv2("mietinserate_v1.csv", header = TRUE)
+data
+```
+```{r}
+plot(y = data$Mietpreis_Brutto,
+     x = data$Zimmer,
+     pch = "x", "preis pro Wohnung")
+```
+
+
+```{r}
+tinytex::install_tinytex()
+
+```
+
