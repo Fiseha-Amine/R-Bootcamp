@@ -5,36 +5,87 @@ date: "2 2 2021"
 output: html_document
 ---
 
+/ Break page
+/Table of Contents
+
+
+
+# Introduction
+
+# Aim of Analysis
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Libraries
+```{r}
+library(tidyverse)
+library(dplyr)
+```
 
+# Data Import
+
+The dataset is from an online survey about house renting market. The goal is to analyse the price in relation to geography, area, and ....
 
 ```{r}
 
 data <- read.csv2("mietinserate_v1.csv", header = TRUE, fileEncoding = "UTF-8")
-head(data)
 
 ```
+
+
+# Data Preparation
+```{r}
+data <- as.data.frame(data)
+
+data$Zimmer = as.numeric(data$Zimmer)
+data$Fläche = as.numeric(data$Fläche)
+data$Bezugsdatum =as.Date(data$Bezugsdatum, "%d.%m.%Y")
+```
+
+
+## Missing values
+
+```{r}
+sum(is.na(data$Fläche))
+
+data_kanton <- group_by(data, "KT")
+sum(is.na(data_kanton$Fläche))
+```
+
+## Data Modification
+
+```{r}
+data$PLZ_Ort %>%
+  str_match('(.*\\d) (.*)') %>%
+  as_tibble() %>%
+  select(2:3) %>%
+  set_names(c('PLZ', 'Ort'))
+```
+
+
+# Graphical Analysis
+
+```{r}
+head(data)
+str(data)
+```
+## Graphical Visualisation
+
 ```{r}
 plot(y = data$Mietpreis_Brutto,
      x = data$Fläche,
      pch = "x", "preis pro Wohnung")
 ```
 
+## Corellation's matrix
+
+
+# Analysis
 
 ```{r}
-#library(dplyr)
-#%>%
-#  top_n(n = 10, wt = Mietpreis_Brutto)
-
-```
-
-
-```{r}
-plot(y = data$Mietpreis_Brutto,
-     x = data$Wohnungstyp,
-     pch = "x", "preis pro Wohnung")
+data%>%
+top_n(n = 10, wt = Mietpreis_Brutto)
 ```
 
