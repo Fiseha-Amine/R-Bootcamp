@@ -48,20 +48,33 @@ data$Bezugsdatum =as.Date(data$Bezugsdatum, "%d.%m.%Y")
 ## Missing values
 
 ```{r}
-sum(is.na(data$Fläche))
+data_sort <- arrange(data, KT, .by_group = FALSE)
+data_sort
+#sum(is.na(data$Fläche))
 
-data_kanton <- group_by(data, "KT")
-sum(is.na(data_kanton$Fläche))
+#data_kanton <- data%>% group_by(KT)
+# sum(is.na(data_kanton$Fläche))
 ```
 
 ## Data Modification
 
+In this step we splin the column PLZ_Ort which consists a postal code and city name to PLZ and Ort. 
+
 ```{r}
-data$PLZ_Ort %>%
+data_sep <- data$PLZ_Ort%>%
   str_match('(.*\\d) (.*)') %>%
   as_tibble() %>%
   select(2:3) %>%
   set_names(c('PLZ', 'Ort'))
+data_sep
+```
+
+As this columns are saved separately from the main dataset, we merge it again to the main dataset and remove the old column "PLZ_Ort".
+
+```{r}
+data_sort <- data_sort%>%select(-PLZ_Ort)
+data_clean <- bind_cols(data_sort, data_sep)
+data_clean
 ```
 
 
