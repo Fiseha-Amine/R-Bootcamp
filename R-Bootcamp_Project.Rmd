@@ -1,27 +1,37 @@
 ---
 title: "Analysis of Rental Housing Market"
-author: "Fiseha Amine,Martina Schüpbach-Wolf  "
-date: "2 2 2021"
-output: html_document
+author: 'Fiseha Amine,Martina Schüpbach-Wolf  '
+date: "02 02 2021"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
-/ Break page
-/Table of Contents
+\newpage 
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
 
 
 
 #######################
 --> Questions:
-- Sollten wir auch den Mietpreise umwandeln?
+- Sollten wir auch den Mietpreise umwandeln und die Kantone als Factor?
 - Sind die gekürzen Namen ok?
-- "Wohnungstyp" hat 18 leere Zellen ("Seite: 25). Es wird nicht gezeigt. Warum?
+- Wollen wir vor die neuen Spalten jeweils "neu_" schreiben?
+- Die Ziele können wir ja noch anpassen.
+- Datum am Schluss der Arbeit noch anpassen
+- Brauchen wir listof figures - tables?
+- verwenden wir für die Namensbezeichnung der Datensätze einen ". oder _"?
+- ich habe in dem dazugefügten Datensatz in der Exceltabelle Namen angepasst. Ich weiss das ist nicht gut, aber meinst du es ist ok?
 
 
 #######################
 
 
 # Introduction
-This project analysis is part of the R-Bootcamp from HS 2020.
+This project analysis is part of the R-Bootcamp module from HS 2020.
 It contains the topics that have been covered in the module.
 
 # Aim of Analysis
@@ -33,6 +43,7 @@ Our goals are to:
 - show where are the most expensive apartments (canton/community)
 - show where are the biggest apartments
 - show what kind of apartments are most
+- Is there a relation ship of the number of people in the canton and size of appartments?
 
 
 ```{r setup, include=FALSE}
@@ -40,9 +51,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Libraries
-```{r}
+```{r, message=FALSE}
+library(readxl)
 library(tidyverse)
 library(dplyr)
+library(mlbench)
 library(mice)
 ```
 
@@ -56,48 +69,60 @@ It contains following data (in German):
   ID, Year, Quarter, Apartment type, Room, Area, Rent Gross, Square Meter, Price Gross, Address, Postcode and City, Move-In Date,        Building Coordinates, Canton
 
 ```{r}
-#Because the data has "Umlaute" we use "UTF-8" for the read in.
+#Because the data contain "Umlaute" we use "UTF-8" for the read in.
 data <- read.csv2("mietinserate_v1.csv", header = TRUE, fileEncoding = "UTF-8")
 head(data)
 str(data)
-
+summary(data)
 ```
 
 
 # Data Preparation
+For the upcoming analysis the data needs to get formatted and cleaned.
 ```{r}
-#We transform the data into a data frame and also transform numeric data into numeric and transform the date data into the correct format.
+#We transform the data into a data frame. We also transform numeric data into numeric and transform the date data into the correct format.
 data <- as.data.frame(data)
 
 data$Zimmer = as.numeric(data$Zimmer)
 data$Fläche = as.numeric(data$Fläche)
+data[data == ""] <- NA
 data$Bezugsdatum =as.Date(data$Bezugsdatum, "%d.%m.%Y")
 ```
 
 
 ```{r}
 #shorten column names
-data.1 <- rename(data, W.Type = Wohnungstyp, Miete = Mietpreis_Brutto, Quad_m = Quadratmeterpreis_Brutto, Bezug = Bezugsdatum)
+data.1 <- rename(data, W.Type = Wohnungstyp, Miete = Mietpreis_Brutto, Quad_m = Quadratmeterpreis_Brutto, Bezug = Bezugsdatum, W.Fläche = Fläche)
 data.1
 ```
 
 ## Missing values
 
-```{r, MissingValues, echo=FALSE, fig.height = 9, fig.width = 16}
-colSums(is.na(data.1)) ##counts all NA
+Here all missing data get shown in a plot to get an overview of the distribution of them.
+Also we can observe how many cantons have how many NAs in relation to...
+
+```{r, MissingValues, echo=FALSE, fig.height = 10, fig.width = 17}
+colSums(is.na(data.1)) ##counts all NA in a table
 md.pattern(data.1, rotate.names = TRUE) ##shows a table and a plot of the data for the NAs
 
-
-sum(is.na(data.1$W.Typ))
-#sum(is.na(data$Fläche))
-
-#data_kanton <- data%>% group_by(KT)
+# data_kanton <- group_by(data, "KT")
 # sum(is.na(data_kanton$Fläche))
+
+data.1 %>% count(KT, sort = TRUE) #shows the amount of cantons in dataset per canton
+
+data.1 %>%
+  group_by(KT) %>% 
+  summarise(non_na_count = sum(is.na(Zimmer))) #Lists all cantons and shows the "NAs"
+  
+data.1 %>%
+     filter(is.na(Zimmer))  %>%
+      count(KT) #Shows on the found cantons with NAs
+
 ```
 
 ## Data Modification
 
-In this step we split the column PLZ_Ort which consists a postal code and city name to PLZ and Ort. 
+In this step we split the column "PLZ_Ort" which consists a postal code and city name to PLZ and Ort. 
 
 ```{r}
 data_sep <- data.1$PLZ_Ort%>%
@@ -111,33 +136,66 @@ data_sep
 As this columns are saved separately from the main dataset, we merge it again to the main dataset and remove the old column "PLZ_Ort".
 
 ```{r}
-data_sort <- data_sort%>%select(-PLZ_Ort)
+data_sort <- data.1%>%select(-PLZ_Ort)
 data_clean <- bind_cols(data_sort, data_sep)
 data_clean
+
+# data_sort <- data_sort%>%select(-PLZ_Ort)
+# data_clean <- bind_cols(data_sort, data_sep)
+# data_clean
+```
+
+## Add new data set
+
+To also have an overview of the number of residents in the canton, we add a new data set.
+We extracted the data set from: <https://www.citypopulation.de/de/switzerland/cities/>
+
+```{r}
+#Read new data set and join new data set to our data set.
+data_canton <- read_xlsx("SchweizKantone_Einwohner.xlsx", skip = 3)
+head(data_canton)
+str(data_canton)
+
+#prepare for the join
+data_canton <- rename(data_canton, KT = CHE, Kanton = Schweiz, G.Fläche = Gemeindefläche)
+
+data_left_join <- left_join(data_clean, data_canton, by = "KT")
+head(data_left_join)
+data_left_join
 ```
 
 
 # Graphical Analysis
 
 ```{r}
-head(data)
-str(data)
+head(data_left_join)
+str(data_left_join)
+
 ```
 ## Graphical Visualisation
 
 ```{r}
-plot(y = data$Mietpreis_Brutto,
-     x = data$Fläche,
-     pch = "x", "preis pro Wohnung")
+plot(y = data_left_join$Miete,
+     x = data_left_join$W.Fläche,
+     pch = "x",
+     title("Price per appartment"),
+           xlab = "living space",
+           ylab = "rent")
+#abline()
 ```
 
-## Corellation's matrix
+## Corellation matrix
+```{r}
+pairs(~Zimmer+Miete+W.Fläche+G.Fläche+Einwohner_2019,data=data_left_join,
+      main="Simple Scatterplot")
+
+```
 
 
 # Analysis
 
 ```{r}
-data%>%
-top_n(n = 10, wt = Mietpreis_Brutto)
+data_left_join%>%
+top_n(n = 10, wt = Miete)
 ```
 
