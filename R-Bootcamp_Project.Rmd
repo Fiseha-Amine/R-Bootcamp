@@ -17,14 +17,14 @@ output:
 
 #######################
 --> Questions:
-- Sollten wir auch den Mietpreise umwandeln und die Kantone als Factor?
+
 - Sind die gekürzen Namen ok?
 - Wollen wir vor die neuen Spalten jeweils "neu_" schreiben?
-- Die Ziele können wir ja noch anpassen.
-- Datum am Schluss der Arbeit noch anpassen
-- Brauchen wir listof figures - tables?
+- Die Ziele (unten) können wir ja noch anpassen...
+- Als Erinnerung: Datum am Schluss der Arbeit noch anpassen
+- Brauchen wir listof figures - tables als Verzeichnis (oben)?
 - verwenden wir für die Namensbezeichnung der Datensätze einen ". oder _"?
-- ich habe in dem dazugefügten Datensatz in der Exceltabelle Namen angepasst. Ich weiss das ist nicht gut, aber meinst du es ist ok?
+- ich habe in dem dazugefügten Datensatz in der Exceltabelle Namen angepasst. Ich weiss das ist nicht gut, aber meinst du es ist ok? Ansonsten versuche ich es hier im File, was wahrscheinlich "sauberer" wäre.
 
 
 #######################
@@ -57,6 +57,8 @@ library(tidyverse)
 library(dplyr)
 library(mlbench)
 library(mice)
+library(ggplot2)
+library(plotly)
 ```
 
 # Data Import
@@ -182,7 +184,60 @@ plot(y = data_left_join$Miete,
            xlab = "living space",
            ylab = "rent")
 #abline()
+
+ggplot(data_left_join, aes(x=Miete, y=W.Fläche) ) +
+  geom_hex(bons = 70) +
+  scale_fill_continuous(type = "viridis") +
+  theme_bw()
 ```
+
+##Plotversuche
+```{r}
+
+ggplot(data_left_join, aes(x=Miete, y=Zimmer, color=W.Type))+
+  geom_point(size=2)
+
+##
+
+qplot(y = Zimmer, x = Miete, data = data_left_join, facets = ~ W.Type)
+
+##
+
+boxplot(Zimmer ~ W.Type, data = data_left_join, main = "xxx")
+
+##
+
+fig <- plot_ly(data = data_left_join, x = ~Einwohner_2019, y = ~G.Fläche,
+               marker = list(size = 10,
+                             color = 'rgba(255, 182, 193, .9)',
+                             line = list(color = 'rgba(152, 0, 0, .8)',
+                                         width = 2)))
+fig <- fig %>% layout(title = 'Styled Scatter',
+         yaxis = list(zeroline = FALSE),
+         xaxis = list(zeroline = FALSE))
+
+fig
+
+##
+###hier gerne plot mit "wenn Miete teurer ist, dann andere Farbe"
+fig <- plot_ly(data_left_join, x = ~KT, y = ~Miete, type = 'bar', color = I("black"))
+fig <- fig %>% layout(title = "Rent per canton",
+         xaxis = list(title = ""),
+         yaxis = list(title = ""))
+
+fig
+
+# fig <- plot_ly(data_left_join, x = ~KT, y = ~Miete, type = 'bar', color = ifelse("Miete" > 3000,'green'))
+# fig <- fig %>% layout(title = "Rent per canton",
+#          xaxis = list(title = ""),
+#          yaxis = list(title = ""))
+# 
+# fig
+
+
+
+```
+
 
 ## Corellation matrix
 ```{r}
