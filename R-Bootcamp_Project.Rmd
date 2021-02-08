@@ -67,7 +67,7 @@ library(plotly)
 # Data Import
 The data set was downloaded from "Datenportal Schweiz_Wohungsmieten": <https://datenportal.info/wohnungsmarkt/wohnungsmieten/>
 
-It contains following data (in German): 
+It contains the following attributes (in German): 
   ID, Year, Quarter, Apartment type, Room, Area, Rent Gross, Square Meter, Price Gross, Address, Postcode and City, Move-In Date,        Building Coordinates, Canton
 
 ```{r}
@@ -80,20 +80,15 @@ summary(data)
 
 
 # Data Preparation
-For the upcoming analysis the data needs to get formatted and cleaned.
+For the upcoming analysis the data needs to get formatted and cleaned.We transform the data into a data frame. We also transform numeric data into numeric and transform the date data into the correct format.we also rename column names for better readability.
 ```{r}
-#We transform the data into a data frame. We also transform numeric data into numeric and transform the date data into the correct format.
+
 data <- as.data.frame(data)
 
 data$Zimmer = as.numeric(data$Zimmer)
 data$Fläche = as.numeric(data$Fläche)
 data[data == ""] <- NA
 data$Bezugsdatum =as.Date(data$Bezugsdatum, "%d.%m.%Y")
-```
-
-
-```{r}
-#shorten column names
 data.1 <- rename(data, W.Type = Wohnungstyp, Miete = Mietpreis_Brutto, Quad_m = Quadratmeterpreis_Brutto, Bezug = Bezugsdatum, W.Fläche = Fläche)
 data.1
 ```
@@ -159,7 +154,7 @@ head(data_canton)
 str(data_canton)
 
 #prepare for the join
-data_canton <- rename(data_canton, KT = CHE, Kanton = Schweiz, G.Fläche = Gemeindefläche)
+data_canton <- rename(data_canton, KT = Kanton, CH = Schweiz, G.Fläche = Gemeindefläche)
 
 data_left_join <- left_join(data_clean, data_canton, by = "KT")
 head(data_left_join)
