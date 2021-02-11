@@ -80,7 +80,7 @@ library(shiny)
 The data set was downloaded from "Datenportal Schweiz_Wohungsmieten": <https://datenportal.info/wohnungsmarkt/wohnungsmieten/>
 
 It contains the following attributes (in German): 
-  ID, Year, Quarter, Apartment type, Room, Area, Rent Gross, Square Meter, Price Gross, Address, Postcode and City, Move-In Date,        Building Coordinates, Canton
+  ID, Year, Quarter, Apartment type, Room, Area, Rent Gross, Square Meter, Price Gross, Address, Postcode and City, Move-In Date,Building Coordinates, and Canton.
 
 ```{r, Data Import}
 #Because the data contain "Umlaute" we use "UTF-8" for the read in.
@@ -93,7 +93,7 @@ summary(data)
 
 ## Join second data set
 To also have an overview of the number of residents in the cantons, we add a new data set.
-We extracted the data set from: <https://www.citypopulation.de/de/switzerland/cities/>
+We extracted the data set from: <https://www.citypopulation.de/de/switzerland/cities/>. It contains the column names: Kanton, KT, Hauptstädte, G.Fläche, Einwohner_1980, Einwohner_1990, Einwohner_2000, Einwohner_2010, and Einwohner_2019.
 
 ```{r, Join}
 #Read new data set and join new data set to our data set.
@@ -134,7 +134,7 @@ data_1
 
 ##Delete Columns
 
-Here we delete columns that are not needed for the later analysis. Those came with the join in the step before
+Here we delete columns that are not needed within the scope of this analysis. Those columns appear in the dataset after joining two different datasets in the previous step.
 
 ```{r, Delete Columns}
 
@@ -172,18 +172,12 @@ data_clean
 
 
 # Graphical Analysis
-
-```{r}
-head(data_clean)
-str(data_clean)
-
-```
+With the help of graphical visualisation we try to see if there are some patterns, outliers, missing values, and if the distribution of the dataset is normal. 
 
 
 ## Missing values
 
-Here all missing data get shown in a plot to get an overview of the distribution of them.
-Also we can observe how many cantons have how many NAs in relation to...
+Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced representance of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
 
 ```{r, MissingValues, echo=FALSE, fig.height = 10, fig.width = 17}
 colSums(is.na(data_clean)) ##counts all NA in a table
@@ -204,19 +198,26 @@ data_clean %>%
 
 ```
 
+The graphical presentation of missing values shows that there is high missing values in number of rooms, square meter of rooms,and entrance date. There is no action which is taken to remove or replace missing values and we will continue our analysis with the missing values included.
 
 ## Graphical Visualisation
 
-Text...
+Below we visualize the distribution of living area and correlating rental price.
 
 ```{r}
 plot(y = data_clean$Miete,
      x = data_clean$W.Fläche,
      pch = "x",
-     title("Price per appartment"),
-           xlab = "living space",
-           ylab = "rent")
-#abline() zufügen???
+     title("Rental Price per Appartment"),
+           xlab = "living space in square meter",
+           ylab = "rental price")
+
+```
+
+The above plot shows that the range of the area of rental appartments lays between 0 and 200 square meter and costs less than 5000 Swiss Francs. There are some outliers with a living area of above 300 and rental price above 10'000 Swiss Francs.
+
+
+```{r}
 
 ggplot(data_clean, aes(x=Miete, y=W.Fläche) ) +
   geom_hex(bons = 70) +
@@ -224,7 +225,12 @@ ggplot(data_clean, aes(x=Miete, y=W.Fläche) ) +
   theme_bw()
 ```
 
-##Plotversuche
+The above plot shows the same result as seen with the first plot, however with numerical metric.
+
+
+## interactive Graphs
+
+With the help of graphical funcitons we can produce quality interactive graphs for presentation, reporting, publication, etc. For this purpose we will produce some graphs using plotly.
 
 ###Plotly 1
 --> Ich bin mir nicht ganz sicher, was dieser Plot aussagt...
@@ -260,31 +266,41 @@ export(fig2, file = tmpFile)
 
 ```
 
+The interactive graph above shows the living space in every canton in relation to the amount of popullation.
+
+## Further graphical visualisations
+
+
 ```{r}
-
-```
-
-
-```{r}
-
 ggplot(data_clean, aes(x=Miete, y=Zimmer, color=W.Type))+
   geom_point(size=2)
+```
 
+The above plot shows the type of rental housing available for rent colourfully. It shows that most of the rental objects availabe are appartments (pinc colour).
+
+```{r}
 ##
 
 qplot(y = Zimmer, x = Miete, data = data_clean, facets = ~ W.Type)
-
-##
-
-boxplot(Zimmer ~ W.Type, data = data_clean, main = "xxx")
-
 ```
 
+The above graphs shows the same information as above however in a separetely displayed plots. The plot is produced with qplot.
+
+```{r fig.width=9, fig.height=7}
+##
+
+boxplot(Zimmer ~ W.Type, data = data_clean, main = "Average number of rooms of the rental objects")
+
+```
+The above boxplots visualizes the average number of rooms for differnt types of rental objects. Rental objects of type "Maisonettwohnung" have in average 5 rooms, where as Rental objects of type "Studio" have in average one room.
 
 ## Corellation matrix
-```{r}
+
+To have a multi-dimensional visualisation of several attributes, we visualize a corellation matrix. 
+
+```{r fig.width=9, fig.height=7}
 pairs(~Zimmer+Miete+W.Fläche+G.Fläche+Einwohner_2019,data=data_clean,
-      main="Simple Scatterplot")
+      main="Corellation Matrix of different attributes")
 
 ```
 
