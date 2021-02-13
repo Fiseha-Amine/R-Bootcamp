@@ -39,15 +39,14 @@ Wir können Matteo mal schreiben und fragen, ob es eine andere Lösung gibt.
 
 
 # Introduction
-This project analysis is part of the R-Bootcamp module from HS 2020.
-It contains the topics that have been covered in the module.
+This analysis is done as part of the R-Bootcamp module from HS 2020.The aim of the analysis within this scope is to experiment with the different functionalities and methods introduced in this course to answer some analytical and hypothetical research questions.
+
 
 # Aim of Analysis
-The aim to analyze the rental housing market in Switzerland with open access data from 2019.
+Within this work we will analyse the house renting market in Switzerland with the help of open source data from the year 2019. Some of the analysis done in this work are:
 
-Our goals are to:
 - analyze the price in relation to geography and per canton
-- show where are most apartments
+- show where are most apartments available
 - show where are the most expensive apartments (canton/community)
 - show where are the biggest apartments
 - show what kind of apartments are most
@@ -306,9 +305,28 @@ pairs(~Zimmer+Miete+W.Fläche+G.Fläche+Einwohner_2019,data=data_clean,
 
 
 # Analysis
+## The most expensive apartments
+```{r}
+top10 <- data_clean%>%top_n(n = 10, wt = Miete)
+
+top10_sorted <- top10[order(top10$Miete, na.last=TRUE) , ]
+top10_sorted
+
+  
+```
+
+The most expensive apartment is located in the canton of Zurich and it costs 31'800 Swiss Francs per month. The 10th most expensive apartment costs 10'852 and it is located in the canton of geneve.
+
+## The biggest apartments
 
 ```{r}
-data_clean%>%
-top_n(n = 10, wt = Miete)
+top10 <- data_clean%>%top_n(n = 10, wt = W.Fläche)
+
+top10_sorted <- top10[order(top10$W.Fläche, na.last=TRUE) , ]
+top10_sorted
 ```
+
+The biggest apartment available for rental is located in the canton of Graubünden and it has an area of 400 square meter. The 10th biggest Appartment has an area of 350 square meter and it is located in the canton of Zurich.
+
+
 
