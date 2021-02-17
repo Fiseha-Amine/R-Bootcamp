@@ -1,10 +1,10 @@
 ---
 title: "Analysis of Rental Housing Market"
-author: 'Fiseha Amine,Martina Schüpbach-Wolf  '
+author: 'Fiseha Amine,Martina Schüpbach-Wolf'
 date: "02 02 2021"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 \newpage 
@@ -29,17 +29,12 @@ Am Schluss:
       - Tabelle einbauen?
       - Export Bild
       
-Bemerkung:
-- Durch Plotly werden die Plots in R interactive, aber im PDF dannn nicht mehr (im html ja, aber sieht nicht so schön aus). Um sie im PDF datstellen zu können, haben ich in Zeile 70/71 und beim Plot später, Code eingefügt.
-Wir können Matteo mal schreiben und fragen, ob es eine andere Lösung gibt.
-
-
 
 #######################
 
 
 # Introduction
-This analysis is done as part of the R-Bootcamp module from HS 2020.The aim of the analysis within this scope is to experiment with the different functionalities and methods introduced in this course to answer some analytical and hypothetical research questions.
+This analysis is done as part of the R-Bootcamp module from HS 2020. The aim of the analysis within this scope is to experiment with the different functionalities and methods introduced in this course to answer some analytical and hypothetical research questions.
 
 
 # Aim of Analysis
@@ -57,6 +52,7 @@ Within this work we will analyse the house renting market in Switzerland with th
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 # Libraries
 ```{r, message=FALSE}
 library(readxl)
@@ -67,13 +63,19 @@ library(mice)
 library(ggplot2)
 library(plotly)
 library(shiny)
+library(esquisse) 
 ```
 
-```{r}
+```{r, special graphical installations}
 
+### needed to export plotly to PDF
 #install.packages("webshot")
 #webshot::install_phantomjs()
+
+###package for esquisser
+#install.packages("esquisse")
 ```
+
 
 # Data Import
 The data set was downloaded from "Datenportal Schweiz_Wohungsmieten": <https://datenportal.info/wohnungsmarkt/wohnungsmieten/>
@@ -147,7 +149,7 @@ data_3
 
 In this step we split the column "PLZ_Ort" which consists a postal code and city name to PLZ and Ort. 
 
-```{r}
+```{r, split PLZ_Ort}
 data_sep <- data_3$PLZ_Ort%>%
   str_match('(.*\\d) (.*)') %>%
   as_tibble() %>%
@@ -176,9 +178,30 @@ With the help of graphical visualisation we try to see if there are some pattern
 
 ## Missing values
 
-Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced representance of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
+Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced represention of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
 
-```{r, MissingValues, echo=FALSE, fig.height = 10, fig.width = 17}
+```{r, table shows all NAs}
+colSums(is.na(data_clean)) ##counts all NAs shown in a table
+```
+
+```{r, MissingValuesPlot, eval=FALSE, fig.height = 10, fig.width = 17}
+md.pattern(data_clean, rotate.names = TRUE) ##shows a table and a plot of the data for the NAs
+```
+
+```{r, example searches for NAs}
+#data_clean %>% count(KT, sort = TRUE) #shows the amount of cantons in dataset per canton
+
+data_clean %>%
+  group_by(KT) %>% 
+  summarise(NAs_Zimmer_count = sum(is.na(Zimmer))) #Lists all cantons and shows the sum of "NAs" for the column "Zimmer" including 0
+  
+data_clean %>%
+     filter(is.na(Zimmer))  %>%
+      count(KT) #Lists all cantons including "NAs" for the column "Zimmer" and sums them without including 0
+```
+
+
+```{r, MissingValues, eval=FALSE, fig.height = 10, fig.width = 17}
 colSums(is.na(data_clean)) ##counts all NA in a table
 md.pattern(data_clean, rotate.names = TRUE) ##shows a table and a plot of the data for the NAs
 
@@ -196,8 +219,8 @@ data_clean %>%
       count(KT) #Shows on the found cantons with NAs
 
 ```
-
 The graphical presentation of missing values shows that there is high missing values in number of rooms, square meter of rooms,and entrance date. There is no action which is taken to remove or replace missing values and we will continue our analysis with the missing values included.
+
 
 ## Graphical Visualisation and Analysis
 
@@ -209,18 +232,19 @@ Below we visualize the distribution of living area and correlating rental price.
 plot(y = data_clean$Miete,
      x = data_clean$W.Fläche,
      pch = "x",
-     title("Rental Price per Appartment"),
+     title("Rental Price per Apartment"),
            xlab = "Apartment Area",
-           ylab = "rental price")
+           ylab = "Rental Price")
 
 ```
 
-The above plot shows that the range of the area of rental appartments lays between 0 and 200 square meter and costs less than 5000 Swiss Francs. There are some outliers with a living area of above 300 and rental price above 10'000 Swiss Francs.
+The above plot shows that the range of the area of rental apartments lays between 0 and 200 square meter and costs less than 5000 Swiss Francs. There are some outliers with a living area of above 300 and rental price above 10'000 Swiss Francs.
+
 
 ### 2. Analysis of Price in Relation to Apartment Area
 ```{r}
 
-g <- ggplot(data_clean, aes(x=Miete, y=W.Fläche, xlab = "Apartment Area", ylab = "Rental Price") ) +
+g <- ggplot(data_clean, aes(x=W.Fläche, y=Miete, xlab = "Rental Price", ylab = "Apartment Area") ) +
   geom_hex(bons = 70) +
   scale_fill_continuous(type = "viridis") +
   theme_bw()
@@ -232,12 +256,48 @@ g + ggtitle("Price in Relation to Apartment Area") +
 The above plot shows the same result as seen with the first plot, however with numerical metric.
 
 
-## interactive Graphs
+## Interactive Graphs
 
-With the help of graphical funcitons we can produce quality interactive graphs for presentation, reporting, publication, etc. For this purpose we will produce some graphs using plotly.
+With the help of graphical functions we can produce quality interactive graphs for presentation, reporting, publication, etc. For this purpose we will produce some graphs using plotly.
 
 ###Plotly 1
---> Ich bin mir nicht ganz sicher, was dieser Plot aussagt...
+
+```{r}
+count_W_Type <- data_clean %>% 
+  group_by(KT, W.Type) %>% 
+  count(KT, sort = TRUE)
+
+fig <- plot_ly(
+  count_W_Type, x = ~KT, y = ~n, type = 'bar', color = ~W.Type)
+
+fig <- fig %>% layout(barmode = "stack",
+                      title = 'Apartments per canton',
+                      xaxis = list(title = "Canton"),
+                      yaxis = list(title = "Number apartments"))
+                      
+fig
+```
+
+
+```{r}
+#count W-Type per canton
+count_W_Type <- data_clean %>% 
+  group_by(KT) %>% 
+  count(KT, sort = TRUE)
+
+fig <- plot_ly(
+  count_W_Type, x = ~KT, y = ~n, type = 'bar')
+
+fig <- fig %>% layout(title = 'Apartments per canton',
+                      xaxis = list(title = "Canton"),
+                      yaxis = list(title = "Number apartments"))
+                      
+fig
+
+tmpFile <- tempfile(fileext = ".png")
+export(fig, file = tmpFile)                    
+```
+
 
 ```{r}
 fig <- plot_ly(
@@ -252,6 +312,24 @@ export(fig, file = tmpFile)
 ```
 
 ###Plotly 2
+
+```{r}
+fig2 <- plot_ly(data_clean, y = ~G.Fläche, x = ~Einwohner_2019, type = 'scatter', mode = 'markers', size = 7,
+        hoverinfo = 'text',
+        text = ~paste('</br> Canton: ', Kanton,
+                      '</br> Residents: ', Einwohner_2019,
+                      '</br> Community area: ', G.Fläche))
+
+fig2 <- fig2 %>% layout(title = 'Residents in 2019 against community area via canton',
+                      xaxis = list(title = "Residents in 2019"),
+                      yaxis = list(title = "Community area"))
+fig2
+
+tmpFile <- tempfile(fileext = ".png")
+export(fig2, file = tmpFile)
+```
+
+
 ```{r}
 fig2 <- plot_ly(data = data_clean, x = ~Einwohner_2019, y = ~G.Fläche,
                marker = list(size = 10,
@@ -272,9 +350,10 @@ export(fig2, file = tmpFile)
 
 The interactive graph above shows the living space in every canton in relation to the amount of popullation.
 
+
 ## Further graphical visualisations
 
-### 3. types of apartments
+### 3. Aim: Types of apartments
 
 ```{r}
 g <- ggplot(data_clean, aes(x=Miete, y=Zimmer, color=W.Type))+
@@ -301,6 +380,7 @@ boxplot(Zimmer ~ W.Type, data = data_clean, main = "Average number of rooms of t
 ```
 The above boxplots visualizes the average number of rooms for different types of rental objects. Rental objects of type "Maisonettwohnung" have in average 5 rooms, where as Rental objects of type "Studio" have in average one room.
 
+
 ## Corellation matrix
 
 To have a multi-dimensional visualization of several attributes, we visualize a correlation matrix. 
@@ -312,19 +392,20 @@ pairs(~Zimmer+Miete+W.Fläche+G.Fläche+Einwohner_2019,data=data_clean,
 ```
 The correlation matrix shows whether there is a correlation among the different factors or not. From the above correlation matrix we can observe that there is a positive correlation between population of a canton and the living area in a commune. 
 
+
 # Analysis
 
 ## 4. The most expensive apartments
+
 ```{r}
 top10 <- data_clean%>%top_n(n = 10, wt = Miete)
 
 top10_sorted <- top10[order(top10$Miete, na.last=TRUE) , ]
 top10_sorted
-
-  
 ```
 
 The most expensive apartment is located in the canton of Zurich and it costs 31'800 Swiss Francs per month. The 10th most expensive apartment costs 10'852 and it is located in the canton of geneve.
+
 
 ## 5. The biggest apartments
 
@@ -339,9 +420,29 @@ The biggest apartment available for rental is located in the canton of Graubünd
 
 
 ### 6. Relationship of the population in the canton and size of apartments
-
 ```{r}
 
+```
+
+
+
+
+
+
+##Chapter of our choice
+
+The esquisse package is an interactive "shiny" gadget to create "ggplot2" charts in a browser.
+Also the retrieved code from the new plot can get copied out and reused in the further R-code.
+
+```{r, ggplot2 builder package}
+
+if (interactive()) {
+# Launch with :
+esquisser(data_clean)
+
+#Launch esquisse in browser :
+esquisser(data_clean, viewer = "browser")
+}
 ```
 
 
