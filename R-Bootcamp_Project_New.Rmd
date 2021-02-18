@@ -62,6 +62,8 @@ library(ggplot2)
 library(plotly)
 library(shiny)
 library(esquisse) 
+library(fBasics)
+library(lmtest)
 ```
 
 ```{r, special graphical installations}
@@ -176,7 +178,7 @@ With the help of graphical visualization we try to see if there are some pattern
 
 ## Missing values
 
-Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced represention of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
+Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced representation of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
 
 ```{r, MissingValuesPlot, eval=FALSE, fig.height = 10, fig.width = 17}
 colSums(is.na(data_clean)) ##counts all NAs shown in a table
@@ -327,7 +329,7 @@ export(fig2, file = tmpFile)
 
 ```
 
-The interactive graph above shows the living space in every canton in relation to the amount of population.
+The interactive graph above shows the rental price in every canton in relation to the amount of population.
 
 
 # Analysis
@@ -343,6 +345,15 @@ top10_sorted
 
 The most expensive apartment is located in the canton of Zurich and it costs 31'800 Swiss Francs per month. The 10th most expensive apartment costs 10'852 and it is located in the canton of geneve.
 
+### Tabullar presentation of most expensive apartments
+
+Subsetting a dataframe
+
+```{r}
+data_subset <- top10_sorted %>% select(W.Type,Zimmer, W.Fläche, Miete, Quad_m, KT, Ort)
+data_subset
+```
+
 
 ## 4. Aim: The biggest apartments
 
@@ -356,9 +367,11 @@ top10_sorted
 The biggest apartment available for rental is located in the canton of Graubünden and it has an area of 400 square meter. The 10th biggest Apartment has an area of 350 square meter and it is located in the canton of Zurich.
 
 
-### 5. Relationship of the population in the canton and size of apartments
+## 5. Relationship of the population in the canton and size of apartments
 
-??? Ist das hilfreich??? Hier noch zusätzlich ein Model wäre cool.
+### Graphical interactive visualization 
+
+
 ```{r}
 
 fig2 <- plot_ly(data_clean, y = ~G.Fläche, x = ~Einwohner_2019, type = 'scatter', mode = 'markers', size = 7,
@@ -375,15 +388,61 @@ fig2
 tmpFile <- tempfile(fileext = ".png")
 export(fig2, file = tmpFile)
 ```
+The above plot shows that the distribution of the population in relation to commune area is normal. Zurich with high population and small communal area and Graubünden with low population and high communal area could be seen as outliers.
 
 
-##Fit Model!!!
+### Fitting Linear Model
 
 
+```{r}
+data_scaled <- data_clean %>%          
+  mutate_at(c("W.Fläche", "Miete", "Einwohner_2019", "G.Fläche", "Zimmer"), ~(scale(.) %>% as.vector))
+
+simple.fit <- lm(Miete~W.Fläche, data=data_scaled)
+summary(simple.fit)
+
+```
+
+The above applied simple regression analysis shows that the rental price varies depending on the apartment area. 
+
+```{r}
+multi.fit = lm(Miete~W.Fläche + G.Fläche + Zimmer + Einwohner_2019, data=data_scaled)
+summary(multi.fit)
 
 
+```
 
+The above multi-regression analysis shows that the price of an apartment is dependent on many factors such as apartment area, population & commune area, but not on the number of rooms.
 
+### Residual analysis
+
+To check whether the chosen model represents the dataset well or not we apply residual analysis.
+
+```{r}
+#Testing normal distribution and independence assumptions
+jarqueberaTest(simple.fit$resid) #Test residuals for normality
+
+dwtest(simple.fit) #Test for independence of residuals
+
+predicted <- predict(simple.fit)
+residuals <- residuals(simple.fit)
+
+par(mfrow = c(2, 2))  # Split the plotting panel into a 2 x 2 grid
+plot(simple.fit)
+
+```
+
+The residuals analysis above shows that the plot residuals vs. fitted values can be presented in a linear model. Therefore we consider that the chosen "lm" model presents the dataset well.
+
+```{r}
+multi.fit = lm(Miete~W.Fläche + G.Fläche + Zimmer + Einwohner_2019, data=data_scaled)
+predicted <- predict(multi.fit)
+residuals <- residuals(multi.fit)
+par(mfrow = c(2, 2))  # Split the plotting panel into a 2 x 2 grid
+plot(multi.fit)
+
+```
+The above residual analysis for the multi regression analysis shows also that the residuals and the fitted values can be modelled with a linear model well.
 
 
 ##Chapter of our choice
