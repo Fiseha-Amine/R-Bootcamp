@@ -166,9 +166,7 @@ data_sort <- data_3%>%select(-PLZ_Ort)
 data_clean <- bind_cols(data_sort, data_sep)
 data_clean
 
-# data_sort <- data_sort%>%select(-PLZ_Ort)
-# data_clean <- bind_cols(data_sort, data_sep)
-# data_clean
+
 ```
 
 
@@ -194,7 +192,7 @@ data_clean %>%
   summarise(NAs_Zimmer_count = sum(is.na(Zimmer))) #Lists all cantons and shows the sum of "NAs" for the column "Zimmer" including 0
   
 data_clean %>%
-     filter(is.na(Zimmer))  %>%
+     filter(is.na(Zimmer))%>%
       count(KT) #Lists all cantons including "NAs" for the column "Zimmer" and sums them without including 0
 ```
 
