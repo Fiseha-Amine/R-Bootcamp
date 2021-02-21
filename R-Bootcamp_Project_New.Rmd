@@ -1,6 +1,6 @@
 ---
 title: "Analysis of Rental Housing Market"
-author: 'Fiseha Amine,Martina Schüpbach-Wolf'
+author: 'Fiseha Amine, Martina Schüpbach-Wolf'
 date: "02 02 2021"
 output:
   pdf_document: default
@@ -23,13 +23,11 @@ Am Schluss:
   - alle "labels" benannt? {r}
   
   
-- Die Ziele (unten) können wir ja noch anpassen...
-- Text "Missing values" unvollständig. Was wollen wir hier genau wissen??? Jenachdem Output anpassen.
-      - Dann code anpassen.
-      - Tabelle einbauen?
-      - Export Bild
-      
-
+        - Tabelle einbauen? --> Bei den Zielen
+        - etwas mehr Text bei den Analysen schreiben
+        - Würdest du sagen der Aim 5 passt zu der Analyse die gemacht wurde?
+        - Warnungen unterdrücken (warning = FALSE) (?)
+   
 #######################
 
 
@@ -110,7 +108,7 @@ head(data_canton)
 #join data sets
 data_left_join <- left_join(data, data_canton, by = "KT")
 head(data_left_join)
-data_left_join
+#data_left_join
 ```
 
 
@@ -129,7 +127,7 @@ data_2$Bezugsdatum =as.Date(data_left_join$Bezugsdatum, "%d.%m.%Y")
 
 #rename data columns for a better readability
 data_1 <- rename(data_2, W.Type = Wohnungstyp, Miete = Mietpreis_Brutto, Quad_m = Quadratmeterpreis_Brutto, Bezug = Bezugsdatum, W.Fläche = Fläche)
-data_1
+#data_1
 ```
 
 
@@ -141,7 +139,7 @@ Here we delete columns that are not needed within the scope of this analysis. Th
 
 #delete columns that are not needed anymore
 data_3 <- data_1 %>% select(-Einwohner_1980, -Einwohner_1990, -Einwohner_2000, -Einwohner_2010)
-data_3
+#data_3
 ```
 
 
@@ -155,7 +153,7 @@ data_sep <- data_3$PLZ_Ort%>%
   as_tibble() %>%
   select(2:3) %>%
   set_names(c('PLZ', 'Ort'))
-data_sep
+#data_sep
 ```
 
 
@@ -164,9 +162,8 @@ As this columns are saved separately from the main dataset, we merge it again to
 ```{r, Merge Data set}
 data_sort <- data_3%>%select(-PLZ_Ort)
 data_clean <- bind_cols(data_sort, data_sep)
-data_clean
-
-
+head(data_clean)
+write.csv(data_clean, "data_clean.csv") #for Shiny app
 ```
 
 
@@ -178,23 +175,17 @@ With the help of graphical visualization we try to see if there are some pattern
 
 Below a graphical and numerical analysis of all missing data is applied to have an overview of the missing values and their distribution within the dataset. This is necessary to avoid bias in the dataset and have a balanced representation of all cantons equally. For this reason we observe which cantons have how many NAs and if any action (deleting, imputing, replacing, etc.) is needed.
 
-```{r, MissingValuesPlot, eval=FALSE, fig.height = 10, fig.width = 17}
+```{r, MissingValuesPlot, fig.height = 10, fig.width = 17}
 colSums(is.na(data_clean)) ##counts all NAs shown in a table
 md.pattern(data_clean, rotate.names = TRUE) ##shows a table and a plot of the data for the NAs
-```
-The graphical presentation of missing values shows that there is high missing values in number of rooms, square meter of rooms,and entrance date. There is no action which is taken to remove or replace missing values and we will continue our analysis with the missing values included.
 
-```{r, example searches for NAs}
-#some example searches for NAs
+#example searches for NAs
 
 data_clean %>%
   group_by(KT) %>% 
   summarise(NAs_Zimmer_count = sum(is.na(Zimmer))) #Lists all cantons and shows the sum of "NAs" for the column "Zimmer" including 0
-  
-data_clean %>%
-     filter(is.na(Zimmer))%>%
-      count(KT) #Lists all cantons including "NAs" for the column "Zimmer" and sums them without including 0
 ```
+The graphical presentation of missing values shows that there is high missing values in number of rooms, square meter of rooms,and entrance date. There is no action which is taken to remove or replace missing values and we will continue our analysis with the missing values included.
 
 
 ## Graphical Visualisation and Analysis
@@ -206,7 +197,6 @@ To have a multi-dimensional visualization of several attributes, we visualize a 
 ```{r fig.width=9, fig.height=7}
 pairs(~Zimmer+Miete+W.Fläche+G.Fläche+Einwohner_2019,data=data_clean,
       main="Correlation Matrix of different attributes")
-
 ```
 The correlation matrix shows whether there is a correlation among the different factors or not. From the above correlation matrix we can observe that there is a positive correlation between population of a canton and the living area in a commune. 
 
@@ -215,20 +205,18 @@ The correlation matrix shows whether there is a correlation among the different 
 
 Below we visualize the distribution of living area and correlating rental price.
 
-```{r}
+```{r, simle plot}
 plot(y = data_clean$Miete,
      x = data_clean$W.Fläche,
      pch = "x",
      title("Rental Price per Apartment"),
            xlab = "Living Space in square meter",
            ylab = "Rental Price in CHF")
-
 ```
-
 The above plot shows that the range of the area of rental apartments lays between 0 and 200 square meter and costs less than 5000 Swiss Francs. There are some outliers with a living area of above 300 and rental price above 10'000 Swiss Francs.
 
 
-```{r}
+```{r, ggplot price vs. ap. area}
 
 g <- ggplot(data_clean, aes(x=W.Fläche, y=Miete, xlab = "Rental Price", ylab = "Apartment Area") ) +
   geom_hex(bons = 70) +
@@ -248,7 +236,7 @@ The above plot shows the same result as seen with the first plot, however with n
 
 With the help of graphical functions we can produce quality interactive graphs for presentation, reporting, publication, etc. For this purpose we will produce some graphs using "plotly".
 
-```{r}
+```{r, plotly ap. per canton}
 count_W_Type <- data_clean %>% 
   group_by(KT, W.Type) %>% 
   count(KT, sort = TRUE)
@@ -264,98 +252,58 @@ fig <- fig %>% layout(barmode = "stack",
 fig
 ```
 
+
 ## Further graphical visualisations for 2. aim
 
-```{r}
+```{r, types of ap.}
 g <- ggplot(data_clean, aes(x=Miete, y=Zimmer, color=W.Type))+
   geom_point(size=2)
 g + ggtitle("Types of Apartments") +
   xlab("Rental Price") + ylab("Rooms")
 ```
-
 The above plot shows the type of rental housing available for rent colorfully. It shows that most of the rental objects available are apartments (pinc colour).
 
-```{r}
-##
 
+```{r, qplot apartments}
 qplot(y = Zimmer, x = Miete, data = data_clean, facets = ~ W.Type, main = "Types of Apartments", xlab = "Rental Price", ylab = "Rooms")
 ```
+The above graphs shows the same information as above however in a separately displayed plots. The plot is produced with qplot.
 
-The above graphs shows the same information as above however in a separetely displayed plots. The plot is produced with qplot.
 
 ```{r fig.width=9, fig.height=7}
 ##
 
 boxplot(Zimmer ~ W.Type, data = data_clean, main = "Average number of rooms of the rental objects", xlab = "Type of Apartment", ylab = "Rooms")
-
 ```
 The above boxplots visualizes the average number of rooms for different types of rental objects. Rental objects of type "Maisonettwohnung" have in average 5 rooms, where as Rental objects of type "Studio" have in average one room.
 
 
-
-????????????????????????
-```{r}
-fig <- plot_ly(
-  data_clean, x = ~KT, y = ~Miete, type = 'bar')
-fig <- fig %>% layout(title = 'Rent per canton',
-                      xaxis = list(title = "Canton"),
-                      yaxis = list(title = "Rent"))
-fig
-
-tmpFile <- tempfile(fileext = ".png")
-export(fig, file = tmpFile)
-```
-
-###Plotly 2
-
-????????????????
-```{r}
-fig2 <- plot_ly(data = data_clean, x = ~Einwohner_2019, y = ~G.Fläche,
-               marker = list(size = 10,
-                             color = 'rgba(255, 182, 193, .9)',
-                             line = list(color = 'rgba(152, 0, 0, .8)',
-                                         width = 2)))
-
-fig2 <- fig2 %>% layout(title = 'Styled Scatter for Rent per Canton',
-         xaxis = list(title = "Canton Population"),
-         yaxis = list(title = "Rent"))
-
-fig2
-
-tmpFile <- tempfile(fileext = ".png")
-export(fig2, file = tmpFile)
-
-```
-
-The interactive graph above shows the rental price in every canton in relation to the amount of population.
-
-
 # Analysis
 
-## 3. Aim: The most expensive apartments
+### 3. Aim: Where are the most expensive apartments
 
-```{r}
+```{r, top10 most expensive}
 top10 <- data_clean%>%top_n(n = 10, wt = Miete)
 
 top10_sorted <- top10[order(top10$Miete, na.last=TRUE) , ]
 top10_sorted
 ```
-
 The most expensive apartment is located in the canton of Zurich and it costs 31'800 Swiss Francs per month. The 10th most expensive apartment costs 10'852 and it is located in the canton of geneve.
 
-### Tabullar presentation of most expensive apartments
+
+## Tabullar presentation of most expensive apartments
 
 Subsetting a dataframe
 
-```{r}
+```{r, subset of top10 most expensive}
 data_subset <- top10_sorted %>% select(W.Type,Zimmer, W.Fläche, Miete, Quad_m, KT, Ort)
 data_subset
 ```
 
 
-## 4. Aim: The biggest apartments
+### 4. Aim: Where are the biggest apartments
 
-```{r}
+```{r, top10 biggest apartments}
 top10 <- data_clean%>%top_n(n = 10, wt = W.Fläche)
 
 top10_sorted <- top10[order(top10$W.Fläche, na.last=TRUE) , ]
@@ -365,14 +313,14 @@ top10_sorted
 The biggest apartment available for rental is located in the canton of Graubünden and it has an area of 400 square meter. The 10th biggest Apartment has an area of 350 square meter and it is located in the canton of Zurich.
 
 
-## 5. Relationship of the population in the canton and size of apartments
+### 5.Aim: Show relationship of the population in the canton and size of apartments
 
-### Graphical interactive visualization 
+## Graphical interactive visualization 
 
+```{r, plotly }
 
-```{r}
-
-fig2 <- plot_ly(data_clean, y = ~G.Fläche, x = ~Einwohner_2019, type = 'scatter', mode = 'markers', size = 7,
+fig2 <- plot_ly(data_clean, y = ~G.Fläche, x = ~Einwohner_2019, 
+                type = 'scatter', mode = 'markers', size = 7,
         hoverinfo = 'text',
         text = ~paste('</br> Canton: ', Kanton,
                       '</br> Residents: ', Einwohner_2019,
@@ -389,7 +337,7 @@ export(fig2, file = tmpFile)
 The above plot shows that the distribution of the population in relation to commune area is normal. Zurich with high population and small communal area and Graubünden with low population and high communal area could be seen as outliers.
 
 
-### Fitting Linear Model
+## Fitting Linear Model
 
 
 ```{r}
@@ -398,21 +346,18 @@ data_scaled <- data_clean %>%
 
 simple.fit <- lm(Miete~W.Fläche, data=data_scaled)
 summary(simple.fit)
-
 ```
-
 The above applied simple regression analysis shows that the rental price varies depending on the apartment area. 
+
 
 ```{r}
 multi.fit = lm(Miete~W.Fläche + G.Fläche + Zimmer + Einwohner_2019, data=data_scaled)
 summary(multi.fit)
-
-
 ```
-
 The above multi-regression analysis shows that the price of an apartment is dependent on many factors such as apartment area, population & commune area, but not on the number of rooms.
 
-### Residual analysis
+
+## Residual analysis
 
 To check whether the chosen model represents the dataset well or not we apply residual analysis.
 
@@ -427,7 +372,6 @@ residuals <- residuals(simple.fit)
 
 par(mfrow = c(2, 2))  # Split the plotting panel into a 2 x 2 grid
 plot(simple.fit)
-
 ```
 
 The residuals analysis above shows that the plot residuals vs. fitted values can be presented in a linear model. Therefore we consider that the chosen "lm" model presents the dataset well.
@@ -438,7 +382,6 @@ predicted <- predict(multi.fit)
 residuals <- residuals(multi.fit)
 par(mfrow = c(2, 2))  # Split the plotting panel into a 2 x 2 grid
 plot(multi.fit)
-
 ```
 The above residual analysis for the multi regression analysis shows also that the residuals and the fitted values can be modelled with a linear model well.
 
@@ -447,6 +390,7 @@ The above residual analysis for the multi regression analysis shows also that th
 
 The "esquisse" package is an interactive "shiny" gadget to create "ggplot2" charts in a browser.
 Also the retrieved code from the new plot can get copied out and reused in the further R-code.
+Selecting out data one can test different plots.
 
 ```{r, ggplot2 builder package}
 
