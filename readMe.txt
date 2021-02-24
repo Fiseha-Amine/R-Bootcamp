@@ -39,7 +39,7 @@ Herefore there are 5 aims to get answered in the following analysis:
 2. Analyze per canton what types of apartments are mostly available
 3. Show where are the most expensive apartments (canton)
 4. Show where are the biggest apartments
-5. Is there a relationship of the population in the canton and size of apartments?
+5. Rental price in relation to size of apartments, number of rooms, population & location
 
 In the graphical analysis different functions like:
 plot, ggplot, plotly, qplot, boxplot and pairs get used.
@@ -65,6 +65,12 @@ REQUIREMENTS
 ------------
 To run the R-code version 1.3.1093 at least needs to be installed.
 
+
+OUTPUTS
+------------
+PDF outputs
+HTML outputs
+R-CODE
 
 
 
